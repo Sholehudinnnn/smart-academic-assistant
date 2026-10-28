@@ -1,63 +1,34 @@
 
-from flask import Flask, jsonify, render_template, request
+import streamlit as st
 from retriever import search_faq
 
-app = Flask(__name__)
+st.set_page_config(
+    page_title="Smart Academic Assistant",
+    page_icon="🎓",
+    layout="centered"
+)
 
+st.title("🎓 Smart Academic Assistant")
+st.caption("Asisten akademik untuk membantu mahasiswa.")
 
-# ==============================
-# HALAMAN UTAMA
-# ==============================
-@app.route("/")
-def index():
-    page = request.args.get("page", "chat")
+question = st.text_input("Masukkan pertanyaan akademik")
 
-    if page not in ("chat", "history"):
-        page = "chat"
+if st.button("Cari Jawaban"):
+    if question.strip():
+        try:
+            result = search_faq(question.strip())
+            st.subheader("Jawaban")
+            st.write(result["answer"])
 
-    return render_template("index.html", page=page)
+            results = result.get("results", [])
+            if results:
+                with st.expander("Referensi terkait"):
+                    st.write(results)
 
-
-# ==============================
-# CEK STATUS SERVER
-# ==============================
-@app.route("/health", methods=["GET"])
-def health():
-    return jsonify({"status": "ok"})
-
-
-# ==============================
-# API CHATBOT
-# ==============================
-@app.route("/api/chat", methods=["POST"])
-def chat():
-    data = request.get_json(silent=True) or {}
-    message = str(data.get("message", "")).strip()
-
-    if not message:
-        return jsonify({
-            "error": "Pertanyaan tidak boleh kosong."
-        }), 400
-
-    try:
-        result = search_faq(message)
-
-        return jsonify({
-            "question": message,
-            "answer": result["answer"],
-            "results": result.get("results", [])
-        })
-
-    except Exception as error:
-        app.logger.exception("Terjadi kesalahan pada chatbot")
-
-        return jsonify({
-            "error": "Maaf, terjadi kesalahan saat mencari jawaban. Silakan coba lagi."
-        }), 500
-
-
-# ==============================
-# JALANKAN SERVER
-# ==============================
-if __name__ == "__main__":
-    app.run(debug=True)
+        except Exception:
+            st.error(
+                "Terjadi kesalahan saat mencari jawaban. "
+                "Periksa log aplikasi untuk detailnya."
+            )
+    else:
+        st.warning("Masukkan pertanyaan terlebih dahulu.")
