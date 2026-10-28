@@ -11,11 +11,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 # 1. KONFIGURASI LOKASI PROYEK
 # ==================================================
 
-ROOT_DIR = Path(__file__).resolve().parents[1]
+ROOT_DIR = Path(__file__).resolve().parent
 
-MODEL_DIR = ROOT_DIR / "03_model_pipeline" / "models"
-ARTIFACT_DIR = ROOT_DIR / "03_model_pipeline" / "artifacts"
-DATA_DIR = ROOT_DIR / "01_data"
+MODEL_DIR = ROOT_DIR / "models"
+ARTIFACT_DIR = ROOT_DIR / "artifacts"
+DATA_DIR = ROOT_DIR / "data"
 
 
 # ==================================================
@@ -68,9 +68,11 @@ faq_data["faq_id"] = faq_data["faq_id"].astype(str)
 
 def preprocess(text):
     """Membersihkan teks sebelum pencarian FAQ."""
+
     text = str(text).lower().strip()
     text = re.sub(r"[^\w\s]", " ", text)
     text = re.sub(r"\s+", " ", text)
+
     return text
 
 
