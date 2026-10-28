@@ -53,7 +53,7 @@ st.markdown("""
 }
 
 .brand-icon {
-    background: linear-gradient(145deg,#3678f6,#204fc4);
+    background: linear-gradient(145deg, #3678f6, #204fc4);
     color: white;
     border-radius: 13px;
     padding: 12px;
@@ -138,7 +138,7 @@ st.markdown("""
     border: 1px solid var(--border);
     border-radius: 16px;
     padding: 0;
-    box-shadow: 0 8px 25px rgba(30,54,100,.05);
+    box-shadow: 0 8px 25px rgba(30, 54, 100, .05);
     overflow: hidden;
 }
 
@@ -151,7 +151,7 @@ st.markdown("""
 }
 
 .bot-icon {
-    background: linear-gradient(145deg,#3777f1,#2253c1);
+    background: linear-gradient(145deg, #3777f1, #2253c1);
     color: white;
     border-radius: 12px;
     padding: 12px;
@@ -205,10 +205,11 @@ div[data-testid="stChatInput"] {
     border-color: #dce5f5;
 }
 
-@media(max-width:700px) {
+@media(max-width: 700px) {
     .block-container {
         padding: 1rem;
     }
+
     .hero-icon {
         display: none;
     }
@@ -216,11 +217,30 @@ div[data-testid="stChatInput"] {
 </style>
 """, unsafe_allow_html=True)
 
+
+# =========================
+# SESSION STATE
+# =========================
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+if "history" not in st.session_state:
+    st.session_state.history = []
+
 if "question_input" not in st.session_state:
     st.session_state.question_input = ""
+
+if "show_history" not in st.session_state:
+    st.session_state.show_history = False
+
+if "auto_submit" not in st.session_state:
+    st.session_state.auto_submit = False
+
+
+# =========================
+# SIDEBAR
+# =========================
 
 with st.sidebar:
     st.markdown("""
@@ -233,108 +253,233 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    if st.button("＋  Percakapan Baru", use_container_width=True):
+    if st.button("＋ Percakapan Baru", use_container_width=True):
         st.session_state.messages = []
+        st.session_state.show_history = False
         st.rerun()
 
-    st.markdown('<div class="section-label">MENU UTAMA</div>',
-                unsafe_allow_html=True)
-    st.markdown("💬  Chat Assistant")
+    st.markdown(
+        '<div class="section-label">MENU UTAMA</div>',
+        unsafe_allow_html=True
+    )
+
+    st.markdown("💬 Chat Assistant")
+
     st.link_button(
-        "🔗  Link Pipeline",
+        "🔗 Link Pipeline",
         "https://colab.research.google.com/",
         use_container_width=True
     )
 
-    st.markdown('<div class="section-label">BANTUAN</div>',
-                unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-label">BANTUAN</div>',
+        unsafe_allow_html=True
+    )
+
     st.info(
         "Tanyakan jadwal kuliah, administrasi, kalender akademik, "
         "dan layanan mahasiswa."
     )
 
+    st.markdown("---")
+    st.markdown("### 🕘 History")
+
+    if st.button("Lihat Riwayat", use_container_width=True):
+        st.session_state.show_history = (
+            not st.session_state.show_history
+        )
+        st.rerun()
+
+    if st.session_state.show_history:
+        if st.button(
+            "🗑️ Hapus Semua Riwayat",
+            use_container_width=True
+        ):
+            st.session_state.history = []
+            st.rerun()
+
+        if not st.session_state.history:
+            st.caption("Belum ada riwayat percakapan.")
+
+        for i, item in enumerate(
+            reversed(st.session_state.history)
+        ):
+            with st.expander(item["question"][:45]):
+                st.markdown("**Pertanyaan**")
+                st.write(item["question"])
+
+                st.markdown("**Jawaban**")
+                st.write(item["answer"])
+
+                if st.button(
+                    "Buka Percakapan",
+                    key=f"open_history_{i}",
+                    use_container_width=True
+                ):
+                    st.session_state.messages = [
+                        {"role": "user", "content": item["question"]},
+                        {"role": "assistant", "content": item["answer"]}
+                    ]
+                    st.session_state.show_history = False
+                    st.rerun()
+
+                if st.button(
+                    "Hapus",
+                    key=f"delete_history_{i}",
+                    use_container_width=True
+                ):
+                    actual_index = (
+                        len(st.session_state.history) - 1 - i
+                    )
+                    st.session_state.history.pop(actual_index)
+                    st.rerun()
+
+    st.markdown("---")
     st.caption("🟢 Smart Academic Assistant © 2026")
+
+
+# =========================
+# HEADER
+# =========================
 
 st.markdown("""
 <div class="hero">
-  <div>
-    <div class="tag">✦ AI-POWERED ACADEMIC SERVICE</div>
-    <h1>Halo, Mahasiswa!<br>Ada yang bisa <span>saya bantu?</span></h1>
-    <p>Temukan informasi akademik dengan lebih mudah.
-    Tanyakan kebutuhanmu dan dapatkan jawaban berdasarkan
-    informasi yang tersedia.</p>
-  </div>
-  <div class="hero-icon">🎓</div>
+    <div>
+        <div class="tag">✦ AI-POWERED ACADEMIC SERVICE</div>
+        <h1>Halo, Mahasiswa!<br>
+        Ada yang bisa <span>saya bantu?</span></h1>
+        <p>
+            Temukan informasi akademik dengan lebih mudah.
+            Tanyakan kebutuhanmu dan dapatkan jawaban berdasarkan
+            informasi yang tersedia.
+        </p>
+    </div>
+    <div class="hero-icon">🎓</div>
 </div>
-<div class="status">🟢 Academic Assistant siap membantu
-&nbsp;&nbsp; · &nbsp;&nbsp; 🛡️ Academic Workspace</div>
+
+<div class="status">
+    🟢 Academic Assistant siap membantu
+    &nbsp;&nbsp; · &nbsp;&nbsp; 🛡️ Academic Workspace
+</div>
 """, unsafe_allow_html=True)
+
+
+# =========================
+# CHAT HEADING
+# =========================
 
 st.markdown("""
 <div class="chat-card">
-  <div class="chat-heading">
-    <div class="bot-icon">🤖</div>
-    <div><strong>Academic AI Assistant</strong><br>
-    <small>Asisten informasi akademik</small></div>
-    <div class="online">● Online</div>
-  </div>
+    <div class="chat-heading">
+        <div class="bot-icon">🤖</div>
+        <div>
+            <strong>Academic AI Assistant</strong><br>
+            <small>Asisten informasi akademik</small>
+        </div>
+        <div class="online">● Online</div>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
-st.markdown("#### 👋 Selamat datang di Smart Academic Assistant")
-st.write(
-    "Saya siap membantu menjawab pertanyaan seputar informasi akademik."
-)
 
-st.markdown("**PERTANYAAN POPULER**")
-questions = [
-    "Bagaimana cara melihat jadwal kuliah?",
-    "Bagaimana cara mengisi KRS?",
-    "Kapan pembayaran UKT dilakukan?",
-    "Di mana melihat kalender akademik?"
-]
+# =========================
+# WELCOME AND POPULAR QUESTIONS
+# =========================
 
-cols = st.columns(2)
-for i, q in enumerate(questions):
-    if cols[i % 2].button(q, key=f"popular_{i}", use_container_width=True):
-        st.session_state.question_input = q
-        st.session_state.auto_submit = True
-        st.rerun()
+if not st.session_state.messages:
+    st.markdown("#### 👋 Selamat datang di Smart Academic Assistant")
+    st.write(
+        "Saya siap membantu menjawab pertanyaan seputar informasi akademik."
+    )
+
+    st.markdown("**PERTANYAAN POPULER**")
+
+    questions = [
+        "Bagaimana cara melihat jadwal kuliah?",
+        "Bagaimana cara mengisi KRS?",
+        "Kapan pembayaran UKT dilakukan?",
+        "Di mana melihat kalender akademik?"
+    ]
+
+    cols = st.columns(2)
+
+    for i, q in enumerate(questions):
+        if cols[i % 2].button(
+            q,
+            key=f"popular_{i}",
+            use_container_width=True
+        ):
+            st.session_state.question_input = q
+            st.session_state.auto_submit = True
+            st.rerun()
+
+
+# =========================
+# DISPLAY CHAT MESSAGES
+# =========================
 
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
+
+# =========================
+# CHAT INPUT
+# =========================
+
 question = st.chat_input("Tulis pertanyaan akademikmu...")
 
-if st.session_state.pop("auto_submit", False):
-    question = st.session_state.pop("question_input", "")
+if st.session_state.auto_submit:
+    question = st.session_state.question_input
+    st.session_state.question_input = ""
+    st.session_state.auto_submit = False
+
+
+# =========================
+# PROCESS QUESTION
+# =========================
 
 if question:
-    st.session_state.messages.append({
-        "role": "user",
-        "content": question
-    })
+    question = question.strip()
 
-    with st.chat_message("user"):
-        st.markdown(question)
+    if question:
+        st.session_state.messages.append({
+            "role": "user",
+            "content": question
+        })
 
-    with st.chat_message("assistant"):
-        with st.spinner("Mencari informasi akademik..."):
-            try:
-                result = search_faq(question.strip())
-                answer = result["answer"]
-                st.markdown(answer)
+        with st.chat_message("user"):
+            st.markdown(question)
 
-                results = result.get("results", [])
-                if results:
-                    with st.expander("📚 Referensi terkait"):
-                        st.write(results)
+        with st.chat_message("assistant"):
+            with st.spinner("Mencari informasi akademik..."):
+                try:
+                    result = search_faq(question)
+                    answer = result["answer"]
 
-                st.session_state.messages.append({
-                    "role": "assistant",
-                    "content": answer
-                })
+                    # Hanya tampilkan jawaban, tanpa referensi terkait
+                    st.markdown(answer)
 
-            except Exception:
-                st.error("Terjadi kesalahan saat mencari jawaban.")
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "content": answer
+                    })
+
+                    # Simpan pertanyaan dan jawaban ke History
+                    st.session_state.history.append({
+                        "question": question,
+                        "answer": answer
+                    })
+
+                except Exception:
+                    error_message = (
+                        "Maaf, terjadi kesalahan saat mencari jawaban. "
+                        "Silakan coba lagi."
+                    )
+
+                    st.error(error_message)
+
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "content": error_message
+                    })
